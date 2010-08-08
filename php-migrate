@@ -1,0 +1,29 @@
+#!/bin/bash
+
+PHP_INSTALLED=`dpkg -l | grep  php| awk  '{print $2}' |tr "\n" " "`
+
+# remove all php packge
+sudo aptitude purge $PHP_INSTALLED
+
+# add karmic to source list
+egrep '(main restricted|universe|multiverse)' /etc/apt/sources.list|grep -v "#"| sed s/lucid/karmic/g | sudo tee /etc/apt/sources.list.d/karmic.list > /dev/null
+
+# update package database (use apt-get if aptitude crash)
+sudo apt-get update
+
+# use karmiс for php package
+# pin-params:  a (archive), c (components), v (version), o (origin) and l (label).
+echo -e "Package: php5\nPin: release a=karmic\nPin-Priority: 991\n"  | sudo tee /etc/apt/preferences.d/php > /dev/null
+
+apt-cache search php5-|grep php5-|awk '{print "Package:", $1,"\nPin: release a=karmic\nPin-Priority: 991\n"}'| sudo tee -a /etc/apt/preferences.d/php > /dev/null
+apt-cache search -n libapache2-mod-php5 |awk '{print "Package:", $1,"\nPin: release a=karmic\nPin-Priority: 991\n"}'| sudo tee -a /etc/apt/preferences.d/php > /dev/null
+
+echo -e "Package: php-pear\nPin: release a=karmic\nPin-Priority: 991\n"  | sudo tee -a /etc/apt/preferences.d/php > /dev/null
+
+# install php
+sudo aptitude install -t karmic php5-cli libapache2-mod-php5
+
+# install all previously existing packages.
+sudo apt-get install $PHP_INSTALLED
+
+#done
